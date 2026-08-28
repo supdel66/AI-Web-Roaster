@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentSettings = {
     roastEnabled: true,
-    roastInterval: 10
+    roastInterval: 300 // default 300 seconds (5 minutes)
   };
 
   /**
@@ -102,10 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Roast Toggle
     if (roastToggle) roastToggle.checked = currentSettings.roastEnabled;
 
-    // Roast Interval Slider
+    // Roast Interval Slider (Convert seconds to minutes: 60s - 600s -> 1 - 10 min)
     if (roastIntervalSlider) {
-      roastIntervalSlider.value = currentSettings.roastInterval;
-      roastIntervalVal.innerText = `${currentSettings.roastInterval} sec`;
+      const minutes = Math.max(1, Math.min(10, Math.round(currentSettings.roastInterval / 60)));
+      roastIntervalSlider.value = minutes;
+      roastIntervalVal.innerText = `${minutes} min`;
     }
   }
 
@@ -127,11 +128,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. Roast Interval Slider Change
+  // 3. Roast Interval Slider Change (Convert 1-10 minutes to seconds)
   if (roastIntervalSlider) {
     roastIntervalSlider.addEventListener('input', (e) => {
-      currentSettings.roastInterval = parseInt(e.target.value, 10);
-      roastIntervalVal.innerText = `${currentSettings.roastInterval} sec`;
+      const mins = parseInt(e.target.value, 10);
+      currentSettings.roastInterval = mins * 60;
+      roastIntervalVal.innerText = `${mins} min`;
       saveSettings();
     });
   }

@@ -1,0 +1,11 @@
+# Environment variables & API keys
+.env
+*.env
+
+# Python Virtualenv & Cache
+python_server/venv/
+__pycache__/
+*.pyc
+
+# Local Data Logs
+data/

@@ -14,7 +14,7 @@
   // Default configuration
   let config = {
     roastEnabled: true,
-    roastInterval: 10, // seconds (default 10s)
+    roastInterval: 300, // seconds (default 10s)
     serverUrl: 'http://localhost:8000/roast'
   };
 
@@ -73,10 +73,16 @@
   function triggerRoast() {
     if (!config.roastEnabled) return;
 
+    // Check if extension context is still valid (stops timer if extension was reloaded)
+    if (!extApi || !extApi.runtime || !extApi.runtime.id) {
+      if (roastTimer) clearInterval(roastTimer);
+      return;
+    }
+
     // Get current visible text snippet on page
     const paragraph = getVisibleParagraphSnippet();
 
-    if (extApi && extApi.runtime && extApi.runtime.sendMessage) {
+    try {
       extApi.runtime.sendMessage({
         action: 'FETCH_ROAST',
         payload: {
@@ -84,6 +90,12 @@
           url: location.href
         }
       }, (response) => {
+        if (extApi.runtime && extApi.runtime.lastError) {
+          console.warn('[AI Web Roaster] Extension context updated. Refreshing page recommended.');
+          if (roastTimer) clearInterval(roastTimer);
+          return;
+        }
+
         if (response && response.success && response.data && response.data.roast) {
           showToast(response.data.roast);
         } else {
@@ -92,9 +104,9 @@
           showToast(randomRoast);
         }
       });
-    } else {
-      const randomRoast = LOCAL_FALLBACK_ROASTS[Math.floor(Math.random() * LOCAL_FALLBACK_ROASTS.length)];
-      showToast(randomRoast);
+    } catch (err) {
+      console.warn('[AI Web Roaster] Extension reloaded. Please refresh tab (F5).');
+      if (roastTimer) clearInterval(roastTimer);
     }
   }
 
