@@ -1,66 +1,42 @@
 /**
- * AI Web Roaster - Popup Logic
+ * Webpage Reader - Popup Logic
  * Communicates with content script on active tab and manages persistent user settings.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
-  const extApi = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
-
   // UI Elements
-  const btnInstantRoast = document.getElementById('btn-instant-roast');
-  const roastToggle = document.getElementById('roast-toggle');
-  const roastIntervalSlider = document.getElementById('roast-interval-slider');
-  const roastIntervalVal = document.getElementById('roast-interval-val');
+  const btnToggleReader = document.getElementById('btn-toggle-reader');
+  const btnReadSelection = document.getElementById('btn-read-selection');
+  const fontSelect = document.getElementById('font-select');
+  const speedSlider = document.getElementById('speed-slider');
+  const speedVal = document.getElementById('speed-val');
+  const voiceSelect = document.getElementById('voice-select');
+  const themeButtons = document.querySelectorAll('.theme-opt');
 
   let currentSettings = {
-    roastEnabled: true,
-    roastInterval: 10
+    theme: 'theme-dark',
+    font: 'font-sans',
+    ttsRate: 1.0,
+    voiceURI: ''
   };
 
+  const extApi = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+
   /**
-   * Send message to active browser tab with dynamic fallback injection
+   * Send message to active browser tab
    */
   function sendMessageToActiveTab(message, callback) {
-    if (!extApi || !extApi.tabs) return;
-
-    extApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const activeTab = tabs && tabs[0];
-      if (!activeTab || !activeTab.id) return;
-
-      const url = activeTab.url || '';
-      if (url.startsWith('chrome://') || url.startsWith('vivaldi://') || url.startsWith('about:')) {
-        alert('AI Web Roaster cannot run on browser system pages. Please open a regular website like Wikipedia or a news article!');
-        return;
-      }
-
-      extApi.tabs.sendMessage(activeTab.id, message, (response) => {
-        const lastErr = extApi.runtime.lastError;
-        if (lastErr || !response) {
-          // Content script not in tab yet! Dynamically inject it now
-          if (extApi.scripting) {
-            extApi.scripting.insertCSS({
-              target: { tabId: activeTab.id },
-              files: ['content/roast_toast.css']
-            }).then(() => {
-              return extApi.scripting.executeScript({
-                target: { tabId: activeTab.id },
-                files: ['content/roast_toast.js']
-              });
-            }).then(() => {
-              setTimeout(() => {
-                extApi.tabs.sendMessage(activeTab.id, message, callback);
-              }, 150);
-            }).catch(err => {
-              console.warn('[AI Web Roaster] Dynamic injection error:', err);
-            });
-          }
-        } else {
-          if (callback) callback(response);
+    if (extApi && extApi.tabs) {
+      extApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs && tabs[0]) {
+          extApi.tabs.sendMessage(tabs[0].id, message, (response) => {
+            if (callback) callback(response);
+          });
         }
       });
-    });
+    }
   }
 
   /**
@@ -78,64 +54,113 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Save options to storage and broadcast to active tab
+   * Save options to storage
    */
   function saveSettings() {
     if (extApi && extApi.storage && extApi.storage.local) {
       extApi.storage.local.set(currentSettings);
     }
-
-    // Broadcast updated settings to content script
-    sendMessageToActiveTab({
-      action: 'UPDATE_ROAST_SETTINGS',
-      settings: {
-        roastEnabled: currentSettings.roastEnabled,
-        roastInterval: currentSettings.roastInterval
-      }
-    });
   }
 
   /**
    * Reflect currentSettings object onto popup DOM controls
    */
   function updateUIWithSettings() {
-    // Roast Toggle
-    if (roastToggle) roastToggle.checked = currentSettings.roastEnabled;
+    // Theme swatches
+    themeButtons.forEach(btn => {
+      if (btn.dataset.theme === currentSettings.theme) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
 
-    // Roast Interval Slider
-    if (roastIntervalSlider) {
-      roastIntervalSlider.value = currentSettings.roastInterval;
-      roastIntervalVal.innerText = `${currentSettings.roastInterval} sec`;
+    // Font select
+    if (fontSelect) fontSelect.value = currentSettings.font;
+
+    // Speed slider
+    if (speedSlider) {
+      speedSlider.value = currentSettings.ttsRate;
+      speedVal.innerText = `${currentSettings.ttsRate}x`;
     }
+  }
+
+  /**
+   * Populate TTS voice dropdown options
+   */
+  function populateVoices() {
+    if (!voiceSelect || !window.speechSynthesis) return;
+
+    const voices = window.speechSynthesis.getVoices();
+    voiceSelect.innerHTML = '<option value="">Default System Voice</option>';
+
+    voices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.innerText = `${v.name} (${v.lang})`;
+      if (v.name === currentSettings.voiceURI) {
+        opt.selected = true;
+      }
+      voiceSelect.appendChild(opt);
+    });
   }
 
   // Bind Events
 
-  // 1. Instant Roast Button
-  if (btnInstantRoast) {
-    btnInstantRoast.addEventListener('click', () => {
-      sendMessageToActiveTab({ action: 'TRIGGER_MANUAL_ROAST' });
+  // 1. Toggle Reader Mode
+  if (btnToggleReader) {
+    btnToggleReader.addEventListener('click', () => {
+      sendMessageToActiveTab({ action: 'TOGGLE_READER' });
+      window.close(); // Close popup
+    });
+  }
+
+  // 2. Read Selection
+  if (btnReadSelection) {
+    btnReadSelection.addEventListener('click', () => {
+      sendMessageToActiveTab({ action: 'READ_SELECTION' });
       window.close();
     });
   }
 
-  // 2. Auto Roast Toggle Switch
-  if (roastToggle) {
-    roastToggle.addEventListener('change', (e) => {
-      currentSettings.roastEnabled = e.target.checked;
+  // 3. Theme picker click
+  themeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentSettings.theme = btn.dataset.theme;
+      updateUIWithSettings();
+      saveSettings();
+    });
+  });
+
+  // 4. Font selector change
+  if (fontSelect) {
+    fontSelect.addEventListener('change', (e) => {
+      currentSettings.font = e.target.value;
       saveSettings();
     });
   }
 
-  // 3. Roast Interval Slider Change
-  if (roastIntervalSlider) {
-    roastIntervalSlider.addEventListener('input', (e) => {
-      currentSettings.roastInterval = parseInt(e.target.value, 10);
-      roastIntervalVal.innerText = `${currentSettings.roastInterval} sec`;
+  // 5. Speed slider input
+  if (speedSlider) {
+    speedSlider.addEventListener('input', (e) => {
+      currentSettings.ttsRate = parseFloat(e.target.value);
+      speedVal.innerText = `${currentSettings.ttsRate}x`;
+      saveSettings();
+    });
+  }
+
+  // 6. Voice selector change
+  if (voiceSelect) {
+    voiceSelect.addEventListener('change', (e) => {
+      currentSettings.voiceURI = e.target.value;
       saveSettings();
     });
   }
 
   // Initialize
   loadSavedSettings();
+  populateVoices();
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+  }
 });

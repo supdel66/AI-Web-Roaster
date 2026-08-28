@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AI Web Roaster",
+  "name": "Webpage Reader",
   "version": "1.0.0",
-  "description": "Scrolls web pages with hilarious AI roast pop-up notifications.",
+  "description": "A clean distraction-free reader view and text-to-speech voice reader for any webpage.",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -14,33 +14,32 @@
       "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
     },
-    "default_title": "AI Web Roaster",
+    "default_title": "Webpage Reader",
     "default_popup": "popup/popup.html"
   },
   "permissions": [
     "activeTab",
+    "scripting",
     "storage",
     "contextMenus"
   ],
-  "host_permissions": [
-    "http://localhost:8000/*",
-    "http://*/*",
-    "https://*/*"
-  ],
   "background": {
+    "scripts": [
+      "background/background.js"
+    ],
     "service_worker": "background/background.js"
   },
   "content_scripts": [
     {
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "<all_urls>"
       ],
       "js": [
-        "content/roast_toast.js"
+        "content/article_extractor.js",
+        "content/reader_overlay.js"
       ],
       "css": [
-        "content/roast_toast.css"
+        "content/reader_overlay.css"
       ],
       "run_at": "document_idle"
     }
@@ -52,17 +51,22 @@
         "content/*"
       ],
       "matches": [
-        "http://*/*",
-        "https://*/*"
+        "<all_urls>"
       ]
     }
   ],
   "commands": {
-    "trigger-roast": {
+    "toggle-reader": {
       "suggested_key": {
         "default": "Alt+R"
       },
-      "description": "Trigger Instant AI Roast"
+      "description": "Toggle Reader Mode Overlay"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "webpage-reader@antigravity.local",
+      "strict_min_version": "109.0"
     }
   }
 }
