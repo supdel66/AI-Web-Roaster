@@ -1,52 +1,62 @@
 /**
- * Webpage Reader - Firefox Background Script (MV3)
- * Manages right-click context menus, keyboard commands, and background message passing.
+ * AI Web Roaster - Background Script
+ * Manages right-click context menu and hotkey shortcuts for triggering instant roasts.
  */
 
-// Global API compatibility check for Firefox (supports browser.* and chrome.*)
 const extensionApi = typeof browser !== 'undefined' ? browser : chrome;
 
 /**
- * Register Context Menus on Installation
+ * Register Context Menu on Installation
  */
 extensionApi.runtime.onInstalled.addListener(() => {
-  // Context Menu: Open Reader Mode
   extensionApi.contextMenus.create({
-    id: 'open-reader-mode',
-    title: '📖 Open in Webpage Reader',
+    id: 'trigger-ai-roast',
+    title: '🔥 Roast This Webpage',
     contexts: ['page', 'selection']
-  });
-
-  // Context Menu: Read Selected Text
-  extensionApi.contextMenus.create({
-    id: 'read-selected-text',
-    title: '🔊 Read Selected Text Out Loud',
-    contexts: ['selection']
   });
 });
 
 /**
- * Handle Context Menu Item Clicks
+ * Handle Context Menu Clicks
  */
 extensionApi.contextMenus.onClicked.addListener((info, tab) => {
   if (!tab || !tab.id) return;
 
-  if (info.menuItemId === 'open-reader-mode') {
-    extensionApi.tabs.sendMessage(tab.id, { action: 'TOGGLE_READER' });
-  } else if (info.menuItemId === 'read-selected-text') {
-    extensionApi.tabs.sendMessage(tab.id, { action: 'READ_SELECTION' });
+  if (info.menuItemId === 'trigger-ai-roast') {
+    extensionApi.tabs.sendMessage(tab.id, { action: 'TRIGGER_MANUAL_ROAST' });
   }
 });
 
 /**
- * Handle Keyboard Command Hotkeys (Alt + R)
+ * Handle Hotkey (Alt + R)
  */
 extensionApi.commands.onCommand.addListener((command) => {
-  if (command === 'toggle-reader') {
+  if (command === 'trigger-roast') {
     extensionApi.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs && tabs[0]) {
-        extensionApi.tabs.sendMessage(tabs[0].id, { action: 'TOGGLE_READER' });
+        extensionApi.tabs.sendMessage(tabs[0].id, { action: 'TRIGGER_MANUAL_ROAST' });
       }
     });
+  }
+});
+
+/**
+ * Handle HTTP Fetch from Background Worker to bypass HTTPS Loopback / CORS restrictions
+ */
+extensionApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'FETCH_ROAST') {
+    const serverUrl = 'http://localhost:8000/roast';
+    fetch(serverUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message.payload || {})
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => sendResponse({ success: true, data }))
+      .catch(err => sendResponse({ success: false, error: err.toString() }));
+    return true; // Async response
   }
 });
