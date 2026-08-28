@@ -3,9 +3,9 @@ import json
 import time
 import requests
 from datetime import datetime
-from dotenv import load_dotenv
 
 # Load environment variables from .env file
+from dotenv import load_dotenv
 load_dotenv()
 
 # Data & Logging directory setup
