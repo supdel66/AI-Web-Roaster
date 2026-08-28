@@ -36,7 +36,7 @@ def startup_event():
     print("🤖 Initializing AI Roaster Engine...")
     roaster_engine = MultiEngineRoaster()
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "POST", "OPTIONS"])
 def root():
     active_engine = roaster_engine.engine_type if roaster_engine else "loading"
     return {
@@ -45,8 +45,8 @@ def root():
         "status": "online"
     }
 
-@app.get("/roast")
-@app.post("/roast")
+@app.api_route("/roast", methods=["GET", "POST", "OPTIONS"])
+@app.api_route("/roast/", methods=["GET", "POST", "OPTIONS"])
 def generate_roast(req: RoastRequest = None):
     global roaster_engine
     text = req.text if req else ""

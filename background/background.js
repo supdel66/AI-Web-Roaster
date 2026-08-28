@@ -45,7 +45,7 @@ extensionApi.commands.onCommand.addListener((command) => {
  */
 extensionApi.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'FETCH_ROAST') {
-    const serverUrl = 'http://localhost:8000/roast';
+    const serverUrl = 'https://ai-web-roaster.onrender.com/roast';
     fetch(serverUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
