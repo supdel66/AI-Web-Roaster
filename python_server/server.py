@@ -5,13 +5,13 @@ import uvicorn
 import os
 import sys
 
-# Import HuggingFace Qwen Baseline Engine
+# Import Multi-Engine AI Roaster
 try:
-    from python_server.model_engine import BaselineQwenEngine
+    from python_server.model_engine import MultiEngineRoaster
 except ImportError:
-    from model_engine import BaselineQwenEngine
+    from model_engine import MultiEngineRoaster
 
-app = FastAPI(title="AI Web Roaster Backend API - Qwen2.5 Baseline")
+app = FastAPI(title="AI Web Roaster Multi-Engine API")
 
 # Enable CORS for browser extensions (Vivaldi, Firefox, Chrome)
 app.add_middleware(
@@ -26,41 +26,43 @@ class RoastRequest(BaseModel):
     text: str = ""
     url: str = ""
 
-# Initialize Model Engine
-engine = None
+# Initialize Multi-Engine Roaster
+roaster_engine = None
 
 @app.on_event("startup")
 def startup_event():
-    global engine
-    print("🤖 Initializing HuggingFace Qwen2.5-1.5B-Instruct Engine...")
-    engine = BaselineQwenEngine()
+    global roaster_engine
+    print("🤖 Initializing AI Roaster Engine...")
+    roaster_engine = MultiEngineRoaster()
 
 @app.get("/")
 def root():
+    active_engine = roaster_engine.engine_type if roaster_engine else "loading"
     return {
-        "message": "AI Web Roaster Baseline API is running!",
-        "model": "Qwen/Qwen2.5-1.5B-Instruct",
+        "message": "AI Web Roaster API is running!",
+        "engine": active_engine,
         "status": "online"
     }
 
 @app.get("/roast")
 @app.post("/roast")
 def generate_roast(req: RoastRequest = None):
-    global engine
+    global roaster_engine
     text = req.text if req else ""
     url = req.url if req else ""
 
-    if engine is None:
-        return {"roast": "Model engine is still loading...", "source": "loading"}
+    if roaster_engine is None:
+        return {"roast": "Roaster engine initializing...", "source": "loading"}
 
-    # Generate roast using Qwen2.5-1.5B-Instruct
-    roast_text = engine.generate_roast(text, url)
+    # Generate roast using active engine (Groq / Ollama / HF)
+    result = roaster_engine.generate_roast(text, url)
 
     return {
-        "roast": roast_text,
+        "roast": result["roast"],
         "site": url,
-        "model": "Qwen/Qwen2.5-1.5B-Instruct",
-        "source": "huggingface_qwen_baseline"
+        "engine": result["engine"],
+        "latency_ms": result["latency_ms"],
+        "source": "python_fastapi_server"
     }
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@
   // Default configuration
   let config = {
     roastEnabled: true,
-    roastInterval: 10, // seconds (default 10s)
+    roastInterval: 300, // seconds (default 10s)
     serverUrl: 'http://localhost:8000/roast'
   };
 
