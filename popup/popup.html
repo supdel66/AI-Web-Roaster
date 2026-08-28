@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webpage Reader</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <img src="../icons/icon-48.png" alt="Icon" class="brand-icon">
+        <div>
+          <h1 class="brand-title">Webpage Reader</h1>
+          <p class="brand-subtitle">Distraction-free reading & TTS</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Action Buttons -->
+    <section class="actions-section">
+      <button id="btn-toggle-reader" class="btn btn-primary">
+        <span class="btn-icon">📖</span>
+        <span>Toggle Reader Mode</span>
+      </button>
+
+      <button id="btn-read-selection" class="btn btn-secondary">
+        <span class="btn-icon">🔊</span>
+        <span>Read Selected Text</span>
+      </button>
+    </section>
+
+    <!-- Settings & Customization Card -->
+    <section class="settings-card">
+      <h2 class="card-title">Reading Preferences</h2>
+      
+      <!-- Theme Selection -->
+      <div class="form-group">
+        <label>Color Theme</label>
+        <div class="theme-grid">
+          <button class="theme-opt theme-dark active" data-theme="theme-dark" title="Dark Night"></button>
+          <button class="theme-opt theme-sepia" data-theme="theme-sepia" title="Warm Sepia"></button>
+          <button class="theme-opt theme-light" data-theme="theme-light" title="Pure Light"></button>
+          <button class="theme-opt theme-oled" data-theme="theme-oled" title="OLED Black"></button>
+          <button class="theme-opt theme-nordic" data-theme="theme-nordic" title="Nordic Blue"></button>
+        </div>
+      </div>
+
+      <!-- Typography Selector -->
+      <div class="form-group">
+        <label for="font-select">Font Family</label>
+        <select id="font-select" class="form-control">
+          <option value="font-sans">Sans-Serif (Modern)</option>
+          <option value="font-serif">Serif (Editorial)</option>
+          <option value="font-mono">Monospace (Code)</option>
+          <option value="font-dyslexic">OpenDyslexic</option>
+        </select>
+      </div>
+
+      <!-- Reading Speed Slider -->
+      <div class="form-group">
+        <div class="label-row">
+          <label for="speed-slider">Voice Reading Speed</label>
+          <span id="speed-val" class="val-badge">1.0x</span>
+        </div>
+        <input type="range" id="speed-slider" min="0.5" max="3.0" step="0.25" value="1.0" class="range-slider">
+      </div>
+
+      <!-- Voice Selector -->
+      <div class="form-group">
+        <label for="voice-select">TTS Voice</label>
+        <select id="voice-select" class="form-control">
+          <option value="">Default System Voice</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span class="shortcut-pill">Hotkey: <strong>Alt + R</strong></span>
+      <span>v1.0.0</span>
+    </footer>
+  </div>
+
+  <script src="../lib/tts_engine.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
